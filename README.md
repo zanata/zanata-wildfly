@@ -18,8 +18,8 @@ The build scripts are licensed under LGPL 2.1, but Mojarra and Hibernate retain 
 
 The source code for zanata-wildfly lives here: https://github.com/zanata/zanata-wildfly
 
-Module binaries: https://sourceforge.net/projects/zanata/files/wildfly/
-Hibernate: http://hibernate.org/
-Mojarra: https://javaserverfaces.java.net/
-WildFly: http://wildfly.org/
-Zanata: http://zanata.org/
+ * Module binaries: https://sourceforge.net/projects/zanata/files/wildfly/
+ * Hibernate: http://hibernate.org/
+ * Mojarra: https://javaserverfaces.java.net/
+ * WildFly: http://wildfly.org/
+ * Zanata: http://zanata.org/
