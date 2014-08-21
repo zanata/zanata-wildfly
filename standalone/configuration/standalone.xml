@@ -289,6 +289,7 @@
         <subsystem xmlns="urn:jboss:domain:naming:2.0">
             <bindings>
                 <simple name="java:global/zanata/security/auth-policy-names/internal" value="zanata.internal"/>
+                <simple name="java:global/zanata/security/auth-policy-names/openid" value="zanata.openid"/>
                 <simple name="java:global/zanata/security/admin-users" value="admin"/>
                 <simple name="java:global/zanata/files/document-storage-directory" value="${user.home}/zanata/files"/>
                 <simple name="java:global/zanata/email/default-from-address" value="no-reply@zanata.org"/>
@@ -316,7 +317,7 @@
                 </security-domain>
                 <security-domain name="zanata.openid">
                     <authentication>
-                        <login-module code="org.jboss.seam.security.jaas.SeamLoginModule" flag="required"/>
+                        <login-module code="org.zanata.security.OpenIdLoginModule" flag="required"/>
                     </authentication>
                 </security-domain>
                 <security-domain name="zanata.jaas">
