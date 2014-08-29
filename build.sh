@@ -8,19 +8,16 @@ target=$projectdir/target
 version_wildfly=8.1.0.Final
 version_hibernate=4.2.15.Final
 version_mojarra=2.1.28
-version_weld_jsf=2.1.2.Final
 version_mysql_connector=5.1.32
 
 build_mojarra=true
 build_hibernate=true
+build_wildfly=true
 
 # rm -fr $target
 rm -fr $target/*.zip $target/*.gz $target/*.cli $target/mojarra21 $target/standalone
 
-mkdir -p $target $target/wildfly $target/wildfly-src $target/mojarra21/modules $target/hibernate42/modules $target/standalone/deployments
-
-/bin/cp -r modules/mojarra21/modules/* $target/mojarra21/modules/
-/bin/cp -r modules/hibernate42/modules/* $target/hibernate42/modules/
+mkdir -p $target $target/wildfly $target/wildfly-src $target/mojarra21/modules $target/hibernate42/modules/org/hibernate/main $target/standalone/deployments
 
 mvn="mvn -q"
 download_artifact=com.googlecode.maven-download-plugin:download-maven-plugin:1.2.0:artifact
@@ -39,13 +36,15 @@ if $build_mojarra; then
     # Ref: https://community.jboss.org/wiki/StepsToAddAnyNewJSFImplementationOrVersionToWildFly
 
     cd $target/wildfly-src/wildfly-${version_wildfly}-src
-    echo 'Building wildfly (this may take a while)'
-    ./build.sh -q -DskipTests
+    if $build_wildfly; then
+        echo 'Building wildfly (this may take a while)'
+        ./build.sh -q -Dmaven.test.skip
+    fi
 
     cd ./jsf/multi-jsf-installer
     echo 'Building mojarra installer'
     $mvn -Djsf-version=${version_mojarra} -Pmojarra-2.x clean assembly:single
-    cp ./target/install-mojarra-${version_mojarra}.zip $target/install-mojarra-${version_mojarra}.cli
+    /bin/cp ./target/install-mojarra-${version_mojarra}.zip $target/install-mojarra-${version_mojarra}.cli
 
     rm -fr $target/wildfly/wildfly-${version_wildfly}/modules/**/mojarra-*
 
@@ -70,19 +69,19 @@ fi
 
 if $build_hibernate; then
 
-    # /bin/cp target/wildfly/wildfly-${version_wildfly}/modules/system/layers/base/org/hibernate/4.1/* $target/hibernate42/modules/org/hibernate/main/
-    # sed -i 's/ slot="4.1">/>/' $target/hibernate42/modules/org/hibernate/main/module.xml
+    /bin/cp target/wildfly/wildfly-${version_wildfly}/modules/system/layers/base/org/hibernate/4.1/* $target/hibernate42/modules/org/hibernate/main/
+    sed -i $target/hibernate42/modules/org/hibernate/main/module.xml \
+        -e 's/ slot="4.1">/>/' \
+        -e '/<resources>/a\
+        <resource-root path="hibernate-core-'${version_hibernate}'.jar"/>\
+        <resource-root path="hibernate-entitymanager-'${version_hibernate}'.jar"/>\
+        <resource-root path="hibernate-infinispan-'${version_hibernate}'.jar"/>'
 
     echo 'Getting Hibernate jars'
     $mvn $download_artifact -DgroupId=org.hibernate -DartifactId=hibernate-core -Dversion=${version_hibernate} -DoutputDirectory=$target/hibernate42/modules/org/hibernate/main/
     $mvn $download_artifact -DgroupId=org.hibernate -DartifactId=hibernate-entitymanager -Dversion=${version_hibernate} -DoutputDirectory=$target/hibernate42/modules/org/hibernate/main/
     $mvn $download_artifact -DgroupId=org.hibernate -DartifactId=hibernate-infinispan -Dversion=${version_hibernate} -DoutputDirectory=$target/hibernate42/modules/org/hibernate/main/
-    echo 'copying jipajapa from WildFly dist'
-    /bin/cp target/wildfly/wildfly-${version_wildfly}/modules/system/layers/base/org/hibernate/4.1/jipijapa-hibernate4-1*.jar $target/hibernate42/modules/org/hibernate/main/
 
-    # This could replace the above /bin/cp and wildfly-dist download, but
-    # it needs a real pom to enable the jboss repo (jipijapa is not in Central):
-    # $mvn -Djboss.devel.repo.off com.googlecode.maven-download-plugin:download-maven-plugin:1.2.0:artifact -DgroupId=org.jipijapa -DartifactId=jipijapa-hibernate4-1 -Dversion=1.0.1.Final -DoutputDirectory=$target/hibernate42/modules/org/hibernate/main/ -Dproject.remoteArtifactRepositories=https://repository.jboss.org/nexus/content/groups/public/
 
     echo 'Building Hibernate module zip'
     (cd $target/hibernate42 && zip -qr $target/wildfly-${version_wildfly}-module-hibernate-main-${version_hibernate}.zip .)
