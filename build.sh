@@ -6,15 +6,15 @@ projectdir=$PWD
 target=$projectdir/target
 
 version_wildfly=8.1.0.Final
-version_hibernate=4.2.15.Final
-version_mojarra=2.1.28
+version_hibernate=4.2.19.Final
+version_mojarra=2.1.29-01
 version_mysql_connector=5.1.32
 version_undertow=1.2.0.Beta10
 
-build_mojarra=false
+build_mojarra=true
 build_hibernate=true
 build_wildfly=true
-build_undertow=true
+build_undertow=false
 
 # rm -fr $target
 rm -fr $target/*.zip $target/*.gz $target/*.cli \
