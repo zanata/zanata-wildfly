@@ -55,15 +55,9 @@ if $build_mojarra; then
 
     rm -fr $target/wildfly/wildfly-${version_wildfly}/modules/**/mojarra-*
 
-    echo -e '\nStarting WildFly\n'
-    $target/wildfly/wildfly-${version_wildfly}/bin/standalone.sh &
-    jboss_pid=$!
-    sleep 3 # wait for wildfly to start before connecting jboss-cli
-
     echo -e '\nInstalling Mojarra modules\n'
-    $target/wildfly/wildfly-${version_wildfly}/bin/jboss-cli.sh -c "deploy $target/install-mojarra-${version_mojarra}.cli" ; \
-    echo -e '\nStopping WildFly\n'; \
-    $target/wildfly/wildfly-${version_wildfly}/bin/jboss-cli.sh -c :shutdown
+    $target/wildfly/wildfly-${version_wildfly}/bin/jboss-cli.sh \
+      --commands="embed-server,deploy $target/install-mojarra-${version_mojarra}.cli"
 
     cd $target/wildfly/wildfly-${version_wildfly}/
     echo 'Building Mojarra module zip'
