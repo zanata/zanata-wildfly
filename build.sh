@@ -5,24 +5,20 @@ shopt -s globstar
 projectdir=$PWD
 target=$projectdir/target
 
-version_wildfly=8.1.0.Final
+version_wildfly=9.0.1.Final
 version_hibernate=4.2.20.Final
 version_mojarra=2.1.29-04
-version_mysql_connector=5.1.32
-version_undertow=1.2.0.Beta10
 
 build_mojarra=true
 build_hibernate=true
 build_wildfly=true
-build_undertow=false
 
 # rm -fr $target
 rm -fr $target/*.zip $target/*.gz $target/*.cli \
-  $target/mojarra21 $target/hibernate42 $target/undertow $target/standalone
+  $target/mojarra21 $target/hibernate42 $target/standalone
 
 mkdir -p $target $target/wildfly $target/wildfly-src \
   $target/mojarra21/modules $target/hibernate42/modules/org/hibernate/main \
-  $target/undertow/modules/io/undertow/core/main \
   $target/standalone/deployments
 
 mvn="mvn -q"
@@ -34,22 +30,26 @@ $mvn $download_artifact -DgroupId=org.wildfly -DartifactId=wildfly-dist -Dversio
 echo 'Getting wildfly-dist src'
 $mvn $download_artifact -DgroupId=org.wildfly -DartifactId=wildfly-dist -Dversion=${version_wildfly} -Dclassifier=src -Dtype=tar.gz -Dunpack -DoutputDirectory=$target/wildfly-src/
 
-echo 'Getting mysql-connector-java'
-$mvn $download_artifact -DgroupId=mysql -DartifactId=mysql-connector-java -Dversion=${version_mysql_connector} -DoutputDirectory=$target/standalone/deployments/ -DoutputFileName=mysql-connector-java.jar
-
 if $build_mojarra; then
-    module_zip=$target/wildfly-${version_wildfly}-module-mojarra-${version_mojarra}.zip
+    module_zip=$target/wildfly-module-mojarra-${version_mojarra}.zip
 
     # Ref: https://community.jboss.org/wiki/StepsToAddAnyNewJSFImplementationOrVersionToWildFly
 
     cd $target/wildfly-src/wildfly-${version_wildfly}-src
     if $build_wildfly; then
         echo 'Building wildfly (this may take a while)'
-        ./build.sh -q -Dmaven.test.skip
+        ./build.sh -q -DskipTests
     fi
 
     cd ./jsf/multi-jsf-installer
     echo 'Building mojarra installer'
+
+    sed -i 's/slot="${jsf-impl-name}-${jsf-version}"/slot="main"/g' \
+      src/main/resources/mojarra-*-module.xml
+
+    sed -i 's/--slot=mojarra-${jsf-version}/--slot=main/g' \
+      src/main/resources/mojarra-*deploy.scr
+
     $mvn -Djsf-version=${version_mojarra} -Pmojarra-2.x clean assembly:single
     /bin/cp ./target/install-mojarra-${version_mojarra}.zip $target/install-mojarra-${version_mojarra}.cli
 
@@ -67,7 +67,10 @@ if $build_mojarra; then
 
     cd $target/wildfly/wildfly-${version_wildfly}/
     echo 'Building Mojarra module zip'
-    zip -qr $module_zip modules/**/mojarra-${version_mojarra}
+    zip -qr $module_zip \
+      modules/com/sun/jsf-impl/main \
+      modules/javax/faces/api/main \
+      modules/org/jboss/as/jsf-injection/main
 
     cd $projectdir
 
@@ -78,7 +81,7 @@ fi
 if $build_hibernate; then
     module_src=$target/wildfly/wildfly-${version_wildfly}/modules/system/layers/base/org/hibernate/4.1
     module_target=$target/hibernate42/modules/org/hibernate/main
-    module_zip=$target/wildfly-${version_wildfly}-module-hibernate-main-${version_hibernate}.zip
+    module_zip=$target/wildfly-module-hibernate-main-${version_hibernate}.zip
 
     /bin/cp $module_src/* $module_target/
     sed -i $module_target/module.xml \
@@ -98,28 +101,4 @@ if $build_hibernate; then
     (cd $target/hibernate42 && zip -qr $module_zip .)
 
     echo "The Hibernate module can be found here: $module_zip"
-fi
-
-if $build_undertow; then
-    module_src=$target/wildfly/wildfly-${version_wildfly}/modules/system/layers/base/io/undertow/core/main
-    module_target=$target/undertow/modules/io/undertow/core/main
-    module_zip=$target/wildfly-${version_wildfly}-module-undertow-${version_undertow}.zip
-
-    if [[ -f $module_src/undertow-core-1.[01].*.jar ]]; then
-        echo "Undertow 1.0 or 1.1 not found in specified version of WildFly. You might need to disable this module by setting build_undertow=false."
-        exit 1
-    fi
-    /bin/cp $module_src/module.xml \
-      $module_target/module.xml
-    sed -i $module_target/module.xml \
-      -e "s/undertow-core-\(1\.[01]\..*\)\.jar/undertow-core-${version_undertow}.jar/"
-
-    echo 'Getting Undertow jar'
-    $mvn $download_artifact -DgroupId=io.undertow -DartifactId=undertow-core -Dversion=${version_undertow} \
-      -DoutputDirectory=$module_target
-
-    echo 'Building Undertow module zip'
-    (cd $target/undertow && zip -qr $module_zip .)
-
-    echo "The Undertow module can be found here: $module_zip"
 fi
