@@ -3,7 +3,7 @@ zanata-wildfly contains files which help Zanata (3.5 or later) to run on WildFly
 Author: Sean Flanigan <sflaniga@redhat.com>
 
 
-The modules contain repackaged copies of Mojarra 2.1, Hibernate 4.2 and Undertow 1.2.x.  The zip files are meant to be extracted into a WildFly 8.1/8.2 installation, which will add some Mojarra 2.1 modules, replace the 'main' Hibernate module with Hibernate 4.2, and upgrade Undertow to fix https://bugzilla.redhat.com/show_bug.cgi?id=1197955.
+The modules contain repackaged copies of Mojarra 2.1, Hibernate 4.2 and Undertow 1.2.x.  The zip files are meant to be extracted into a WildFly 8.1/8.2/9 installation, which will add some Mojarra 2.1 modules, replace the 'main' Hibernate module with Hibernate 4.2, and upgrade Undertow to fix https://bugzilla.redhat.com/show_bug.cgi?id=1197955 (Undertow module not recommended: just use WildFly 9).
 
 The 'main' Hibernate module is used by default, but the Mojarra modules need to be activated by a line like this in `standalone.xml`:
 
